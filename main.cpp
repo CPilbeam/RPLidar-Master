@@ -530,7 +530,7 @@ int main(int argc, const char* argv[]) {
                     //printf("Gap Depth: %f \n", gapDepth);
                     //printf("Gap Width: %f \n", gapWidth);
                 }
-                else {
+                else { //branch for identifing a gap with no return readings
                     if (is_no_return(distArr, qualArr, i)) {
                         startEdge = i;
                         while (is_no_return(distArr, qualArr, i)) {
@@ -607,6 +607,7 @@ int main(int argc, const char* argv[]) {
                 }
                 
             }
+            //all waypoints written to wayPoints[index]
 
             
             //write to waypoint file
@@ -624,7 +625,7 @@ int main(int argc, const char* argv[]) {
                         depthFile << j << "," << find_gap_depth(distArr, thetaArr, edgeArr[j][0], edgeArr[j][1], count) << "," << std::endl;
                         b++;
                         //printf("b: %d, wpIndex: %d \n", b, wpIndex);
-                        printf(" Valid waypoint at theta: %f , Waypoint %d \n", thetaArr[wayPoints[j]], j); 
+                        printf(" Valid waypoint at theta: %f , distance: %f , Waypoint %d \n", thetaArr[wayPoints[j]], distArr[wayPoints[j]], j); 
                     }
                 }
                 a++; //a++
