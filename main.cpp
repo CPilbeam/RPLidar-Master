@@ -435,7 +435,7 @@ int main(int argc, const char* argv[]) {
 
 
     // fetech result and print it out...
-    while (d < 5) {
+    while (true) {
         rplidar_response_measurement_node_hq_t nodes[8192];
         size_t   count = _countof(nodes);
 
@@ -499,10 +499,15 @@ int main(int argc, const char* argv[]) {
             int tempEnd = 0;
             int wayPoints[1000] = {};
             int wpIndex = 0;
+
+            //JULIA LOOK HERE: adjustable parameters for ya
+            int widthThreshold = 500; // 500 as in 0.5m (~3ft)
+            int depthThreshold = 500; // not as important. Can omit depth check for increased accuracy but slower performance 
+            int minObjDist = 2000; // distance for detecting obstacles ('x' mm or less is an object to avoid, beyond 'x' we ignore)
             
             //Begin pathfinding:
             for (int i = 0; i < int(count); i++) {
-                if (is_path(distArr, 2000, i)) {
+                if (is_path(distArr, minObjDist, i)) {
                     startEdge = i;
                     while (is_path(distArr, 2000, i)) {
                         //printf("%f is valid path \n", thetaArr[i]);
@@ -510,7 +515,7 @@ int main(int argc, const char* argv[]) {
                     }
                     endEdge = i;
 
-                    if (startEdge <= 1) { // account for bridge across 360-0 mark
+                    if (startEdge <= 1) { // case for gap aat 0-360 mark
                         tempEnd = endEdge;
                     }
                     if (endEdge >= count - 1) {
@@ -541,7 +546,7 @@ int main(int argc, const char* argv[]) {
                         if (startEdge <= 1) { // account for bridge across 360-0 mark
                             tempEnd = endEdge; // set a temporary variable to the front end
                         }
-                        if (endEdge >= count) {
+                        if (endEdge >= count - 1) {
                             endEdge = tempEnd; // set the back end to the front end (Gap is bridged ! :)
                         }
                         openAreaArr[openAreaRow][0] = startEdge;
@@ -576,7 +581,7 @@ int main(int argc, const char* argv[]) {
                     gapFile << thetaArr[edgeArr[i][0]] << "," << thetaArr[edgeArr[i][1]] << "," << std::endl;
                     c++;
                 }
-                if ((tempGapWidth >= 400) & (tempGapDepth >= 500)) { // if is a valid gap
+                if ((tempGapWidth >= widthThreshold) & (tempGapDepth >= depthThreshold)) { // if is a valid gap
                     //printf("Valid Gap between %f and %f \n", thetaArr[edgeArr[i][0]], thetaArr[edgeArr[i][1]]);
                     wayPoints[wpIndex] = ((edgeArr[i][0] + edgeArr[i][1]) / 2); // set one waypoint to the midpoint of a valid gap
                     wpIndex++;
@@ -600,7 +605,7 @@ int main(int argc, const char* argv[]) {
                     //printf("WP Index: %d \n", wpIndex);
                 }
                 else {
-                    if (tempGapWidth >= 300) {
+                    if (tempGapWidth >= widthThreshold) {
                         wayPoints[wpIndex] = (count / 2);
                         wpIndex++;
                     }
@@ -625,6 +630,9 @@ int main(int argc, const char* argv[]) {
                         depthFile << j << "," << find_gap_depth(distArr, thetaArr, edgeArr[j][0], edgeArr[j][1], count) << "," << std::endl;
                         b++;
                         //printf("b: %d, wpIndex: %d \n", b, wpIndex);
+                        if (distArr[wayPoints[j]] == 0) {
+                            distArr[wayPoints[j]] = minObjDist - 100;
+                        }
                         printf(" Valid waypoint at theta: %f , distance: %f , Waypoint %d \n", thetaArr[wayPoints[j]], distArr[wayPoints[j]], j); 
                     }
                 }
