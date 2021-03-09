@@ -609,7 +609,7 @@ int main(int argc, const char* argv[]) {
 
             for (int i = 0; i++; i < wpIndex) {
                 if (distArr[wayPoints[i]] == 0) {
-                    distArr[wayPoints[i]] = minObjDist - 250;
+                    distArr[wayPoints[i]] = minObjDist + 250;
                 }
             }
 
@@ -629,9 +629,6 @@ int main(int argc, const char* argv[]) {
                         depthFile << j << "," << find_gap_depth(distArr, thetaArr, edgeArr[j][0], edgeArr[j][1], count) << "," << std::endl;
                         b++;
                         //printf("b: %d, wpIndex: %d \n", b, wpIndex);
-                        if (distArr[wayPoints[j]] == 0) {
-                            distArr[wayPoints[j]] = minObjDist - 250;
-                        }
                         printf(" Valid waypoint at theta: %f , distance: %f , Waypoint %d \n", thetaArr[wayPoints[j]], distArr[wayPoints[j]], j); 
                     }
                 }
