@@ -435,13 +435,13 @@ int main(int argc, const char* argv[]) {
 
 
     // fetech result and print it out...
-    while (true) {
+    while (d < 5) {
         rplidar_response_measurement_node_hq_t nodes[8192];
         size_t   count = _countof(nodes);
 
         op_result = drv->grabScanDataHq(nodes, count);
         
-        if (IS_OK(op_result)) { // Check if reading is OK
+        if (IS_OK(op_result)) { // Check if reading is OK 
             drv->ascendScanData(nodes, count); // Iterate the driver
             for (int col = 0; col < sampleAvg; ++col) { // Run two for loops - Columns for each data point to be aggregated column-wise
                 for (int pos = 0; pos < (int)count; ++pos) { // Row-wise iteration to store the data for a single revolution 
@@ -509,13 +509,12 @@ int main(int argc, const char* argv[]) {
             for (int i = 0; i < int(count); i++) {
                 if (is_path(distArr, minObjDist, i)) {
                     startEdge = i;
-                    while (is_path(distArr, 2000, i)) {
-                        //printf("%f is valid path \n", thetaArr[i]);
+                    while (is_path(distArr, minObjDist, i)) {
                         i++;
                     }
                     endEdge = i;
 
-                    if (startEdge <= 1) { // case for gap aat 0-360 mark
+                    if (startEdge <= 1) { // case for gap at 0-360 mark
                         tempEnd = endEdge;
                     }
                     if (endEdge >= count - 1) {
@@ -527,14 +526,8 @@ int main(int argc, const char* argv[]) {
                     edgeArr[edgeRow][1] = endEdge;
                     edgeRow++;
 
-                     
-                    // continue!
-                    //printf("nStart: %f nEnd: %f \n", thetaArr[startEdge], thetaArr[endEdge]);
-                    //find_gap_depth(distArr, thetaArr, startEdge, endEdge, count);
-                    //gapWidth = find_gap_width(distArr, thetaArr, startEdge, endEdge);
-                    //printf("Gap Depth: %f \n", gapDepth);
-                    //printf("Gap Width: %f \n", gapWidth);
-                }
+                } // if point detected is not a valid path - do next
+
                 else { //branch for identifing a gap with no return readings
                     if (is_no_return(distArr, qualArr, i)) {
                         startEdge = i;
@@ -553,8 +546,7 @@ int main(int argc, const char* argv[]) {
                         openAreaArr[openAreaRow][1] = endEdge;
                         openAreaRow++;
                     }
-                    //printf("startEdge: %d endEdge: %d \n", startEdge, endEdge);
-                    //printf("Edge Width: %f \n", find_gap_width(distArr, thetaArr, startEdge, endEdge));
+                    
                     // By this point all open area gaps should be found and edges stored in the open area array
                 }
 
@@ -582,7 +574,6 @@ int main(int argc, const char* argv[]) {
                     c++;
                 }
                 if ((tempGapWidth >= widthThreshold) & (tempGapDepth >= depthThreshold)) { // if is a valid gap
-                    //printf("Valid Gap between %f and %f \n", thetaArr[edgeArr[i][0]], thetaArr[edgeArr[i][1]]);
                     wayPoints[wpIndex] = ((edgeArr[i][0] + edgeArr[i][1]) / 2); // set one waypoint to the midpoint of a valid gap
                     wpIndex++;
 
@@ -614,6 +605,14 @@ int main(int argc, const char* argv[]) {
             }
             //all waypoints written to wayPoints[index]
 
+            //remove zeroes for navigation
+
+            for (int i = 0; i++; i < wpIndex) {
+                if (distArr[wayPoints[i]] == 0) {
+                    distArr[wayPoints[i]] = minObjDist - 250;
+                }
+            }
+
             
             //write to waypoint file
             if (a < int(count)) { // write to csv file
@@ -631,7 +630,7 @@ int main(int argc, const char* argv[]) {
                         b++;
                         //printf("b: %d, wpIndex: %d \n", b, wpIndex);
                         if (distArr[wayPoints[j]] == 0) {
-                            distArr[wayPoints[j]] = minObjDist - 100;
+                            distArr[wayPoints[j]] = minObjDist - 250;
                         }
                         printf(" Valid waypoint at theta: %f , distance: %f , Waypoint %d \n", thetaArr[wayPoints[j]], distArr[wayPoints[j]], j); 
                     }
@@ -652,17 +651,6 @@ int main(int argc, const char* argv[]) {
         d++;
     } // end while(1)
     printf("Done with 'while' loop - code should cease running \n");
-
-    //printf("done in loop");
-
-    //int x = runfunction1(int[1000] thetaArr, int[20] array2);
-    //runfunction2();
-    /* Potentially important stuff:
-                    (nodes[pos].angle_z_q14 * 90.f / (1 << 14)),
-                    nodes[pos].dist_mm_q2/4.0f,
-                    nodes[pos].quality);
-                    */
-
 
 
 
