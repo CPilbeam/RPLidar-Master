@@ -606,12 +606,13 @@ int main(int argc, const char* argv[]) {
             //all waypoints written to wayPoints[index]
 
             //remove zeroes for navigation
-
+            /*
             for (int i = 0; i++; i < wpIndex) {
                 if (distArr[wayPoints[i]] == 0) {
                     distArr[wayPoints[i]] = minObjDist + 250;
                 }
             }
+            */
 
             
             //write to waypoint file
@@ -629,7 +630,12 @@ int main(int argc, const char* argv[]) {
                         depthFile << j << "," << find_gap_depth(distArr, thetaArr, edgeArr[j][0], edgeArr[j][1], count) << "," << std::endl;
                         b++;
                         //printf("b: %d, wpIndex: %d \n", b, wpIndex);
-                        printf(" Valid waypoint at theta: %f , distance: %f , Waypoint %d \n", thetaArr[wayPoints[j]], distArr[wayPoints[j]], j); 
+
+                        if (distArr[wayPoints[j]] == 0) {
+                            distArr[wayPoints[j]] = minObjDist + 150;
+                        }
+                        printf("%f %f \n", thetaArr[edgeArr[j][0]], thetaArr[edgeArr[j][1]]);
+                        //printf(" Valid waypoint at Theta: %f , Distance: %f , Waypoint %d \n", thetaArr[wayPoints[j]], distArr[wayPoints[j]], j); 
                     }
                 }
                 a++; //a++
