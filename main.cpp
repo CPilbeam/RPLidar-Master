@@ -435,13 +435,13 @@ int main(int argc, const char* argv[]) {
 
 
     // fetech result and print it out...
-    while (d < 5) {
+    while (true /*d < 5*/) {
         rplidar_response_measurement_node_hq_t nodes[8192];
         size_t   count = _countof(nodes);
 
         op_result = drv->grabScanDataHq(nodes, count);
         
-        if (IS_OK(op_result)) { // Check if reading is OK 
+        //if (IS_OK(op_result)) { // Check if reading is OK 
             drv->ascendScanData(nodes, count); // Iterate the driver
             for (int col = 0; col < sampleAvg; ++col) { // Run two for loops - Columns for each data point to be aggregated column-wise
                 for (int pos = 0; pos < (int)count; ++pos) { // Row-wise iteration to store the data for a single revolution 
@@ -449,7 +449,7 @@ int main(int argc, const char* argv[]) {
                     readDistArr[pos][col] = (nodes[pos].dist_mm_q2 / 4.0f); // Store distance of a data point in readDistArr
                     readQualArr[pos][col] = nodes[pos].quality; // Store quality of a data point in readQualArr
                     
-                        /*printf("%s Pos: %d Col: %d theta: %f Dist: %f Q: %f \n",
+                        /* printf("%s Pos: %d Col: %d theta: %f Dist: %f Q: %f \n",
                             (nodes[pos].flag & RPLIDAR_RESP_MEASUREMENT_SYNCBIT) ? "S " : "  ", pos, col,
                             thetaArr[pos], readDistArr[pos][col], readQualArr[pos][col]); */
                         
@@ -478,7 +478,9 @@ int main(int argc, const char* argv[]) {
                 badScanData << thetaArr[i] << "," << distArr[i] << "," << std::endl;
             }
             for (int i = 0; i < int(count); i++) { // clean data
+                //printf("Point: %d TH: %f Dist: %f Q: %d \n", i, thetaArr[i], distArr[i], qualArr[i]);
                 clean_avg_data(distArr, thetaArr, qualArr, i);
+                //printf("Point: %d TH: %f Dist: %f Q: %d \n", i, thetaArr[i], distArr[i], qualArr[i]);
             }
             
             badScanData << "Theta, Dist(mm)(Unclean), \n";
@@ -501,15 +503,18 @@ int main(int argc, const char* argv[]) {
             int wpIndex = 0;
 
             //JULIA LOOK HERE: adjustable parameters for ya
-            int widthThreshold = 500; // 500 as in 0.5m (~3ft)
+            int widthThreshold = 500; // 500 as in 0.5m (~1.5ft)
             int depthThreshold = 500; // not as important. Can omit depth check for increased accuracy but slower performance 
             int minObjDist = 2000; // distance for detecting obstacles ('x' mm or less is an object to avoid, beyond 'x' we ignore)
             
             //Begin pathfinding:
             for (int i = 0; i < int(count); i++) {
+                //printf("th: %f \n", thetaArr[i]);
                 if (is_path(distArr, minObjDist, i)) {
                     startEdge = i;
+                    //printf("startEdge: %f \n", thetaArr[i]);
                     while (is_path(distArr, minObjDist, i)) {
+                       // printf("is path at theta: %f \n", thetaArr[i]);
                         i++;
                     }
                     endEdge = i;
@@ -524,6 +529,8 @@ int main(int argc, const char* argv[]) {
                    
                     edgeArr[edgeRow][0] = startEdge;
                     edgeArr[edgeRow][1] = endEdge;
+                    //printf("Endedge %f \n", thetaArr[endEdge]);
+                    //printf("%d %f %d %f \n", startEdge, thetaArr[startEdge], endEdge, thetaArr[endEdge]);
                     edgeRow++;
 
                 } // if point detected is not a valid path - do next
@@ -531,10 +538,12 @@ int main(int argc, const char* argv[]) {
                 else { //branch for identifing a gap with no return readings
                     if (is_no_return(distArr, qualArr, i)) {
                         startEdge = i;
+                        //printf("startEdge %f ", thetaArr[i]);
                         while (is_no_return(distArr, qualArr, i)) {
                             i++;
                         }
                         endEdge = i;
+                        //printf("endEdge %f \n", thetaArr[i]);
 
                         if (startEdge <= 1) { // account for bridge across 360-0 mark
                             tempEnd = endEdge; // set a temporary variable to the front end
@@ -544,6 +553,7 @@ int main(int argc, const char* argv[]) {
                         }
                         openAreaArr[openAreaRow][0] = startEdge;
                         openAreaArr[openAreaRow][1] = endEdge;
+                        //printf("%d %f %d %f \n", startEdge, thetaArr[startEdge], endEdge, thetaArr[endEdge]);
                         openAreaRow++;
                     }
                     
@@ -552,7 +562,8 @@ int main(int argc, const char* argv[]) {
 
                 
             } // end for each point in count nodes
-
+            
+            /*
             for (int i = 0; i < edgeRow; i++) {
                 if (edgeRow >= 1) {
                     //printf("edgeRowHERE: %d \n", edgeRow);
@@ -564,6 +575,7 @@ int main(int argc, const char* argv[]) {
                     }
                 }
             }
+            */
 
             for (int i = 0; i < edgeRow; i++) {
                 
@@ -577,6 +589,8 @@ int main(int argc, const char* argv[]) {
                     wayPoints[wpIndex] = ((edgeArr[i][0] + edgeArr[i][1]) / 2); // set one waypoint to the midpoint of a valid gap
                     wpIndex++;
 
+                    printf("%f %f \n", thetaArr[edgeArr[i][0]], thetaArr[edgeArr[i][1]]);
+
                     //printf("Width: %f Depth: %f  ", tempGapWidth, tempGapDepth);
                     //printf("WP Index: %d \n", wpIndex);
                     //printf(" Valid waypoint at theta: %f , Waypoint %d \n", thetaArr[wayPoints[wpIndex]], wpIndex);
@@ -587,16 +601,18 @@ int main(int argc, const char* argv[]) {
 
             for (int i = 0; i < openAreaRow; i++) {
                 tempGapWidth = find_gap_width(distArr, thetaArr, openAreaArr[i][0], openAreaArr[i][1]); // asign temp var width
-                tempGapDepth = tempGapDepth = find_gap_depth(distArr, thetaArr, openAreaArr[i][0], openAreaArr[i][1], count); // asign temp var depth
+                tempGapDepth = find_gap_depth(distArr, thetaArr, openAreaArr[i][0], openAreaArr[i][1], count); // asign temp var depth
                 //printf("width: %f \n", tempGapWidth);
                 if ((tempGapWidth >= 300) & (tempGapWidth <= 10000)) {
                     //printf("width: %f \n", tempGapWidth);
+                    printf("%f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
                     wayPoints[wpIndex] = ((openAreaArr[i][0] + openAreaArr[i][1]) / 2);
                     wpIndex++;
                     //printf("WP Index: %d \n", wpIndex);
                 }
                 else {
                     if (tempGapWidth >= widthThreshold) {
+                        printf("%f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
                         wayPoints[wpIndex] = (count / 2);
                         wpIndex++;
                     }
@@ -634,18 +650,19 @@ int main(int argc, const char* argv[]) {
                         if (distArr[wayPoints[j]] == 0) {
                             distArr[wayPoints[j]] = minObjDist + 150;
                         }
-                        printf("%f %f \n", thetaArr[edgeArr[j][0]], thetaArr[edgeArr[j][1]]);
+                        //printf("%f %f \n", thetaArr[edgeArr[j][0]], thetaArr[edgeArr[j][1]]);
+                        //printf("wpIndex %d \n", wpIndex);
                         //printf(" Valid waypoint at Theta: %f , Distance: %f , Waypoint %d \n", thetaArr[wayPoints[j]], distArr[wayPoints[j]], j); 
                     }
                 }
                 a++; //a++
             }
             
-        } //end if(IS_OK)
+        //} //end if(IS_OK)
 
 
 
-        else { printf("Is_ok false \n"); }
+        //else { printf("Is_ok false \n"); }
 
 
         if (ctrl_c_pressed) {
