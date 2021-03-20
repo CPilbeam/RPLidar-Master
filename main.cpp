@@ -435,7 +435,7 @@ int main(int argc, const char* argv[]) {
 
 
     // fetech result and print it out...
-    while (true /*d < 5*/) {
+    while (d < 5) {
         rplidar_response_measurement_node_hq_t nodes[8192];
         size_t   count = _countof(nodes);
 
@@ -505,7 +505,7 @@ int main(int argc, const char* argv[]) {
             //JULIA LOOK HERE: adjustable parameters for ya
             int widthThreshold = 500; // 500 as in 0.5m (~1.5ft)
             int depthThreshold = 500; // not as important. Can omit depth check for increased accuracy but slower performance 
-            int minObjDist = 2000; // distance for detecting obstacles ('x' mm or less is an object to avoid, beyond 'x' we ignore)
+            int minObjDist = 200; // distance for detecting obstacles ('x' mm or less is an object to avoid, beyond 'x' we ignore)
             
             //Begin pathfinding:
             for (int i = 0; i < int(count); i++) {
@@ -524,6 +524,7 @@ int main(int argc, const char* argv[]) {
                     }
                     if (endEdge >= count - 1) {
                         endEdge = tempEnd;
+                        edgeArr[0][0] = startEdge;
                     }
 
                    
@@ -550,6 +551,7 @@ int main(int argc, const char* argv[]) {
                         }
                         if (endEdge >= count - 1) {
                             endEdge = tempEnd; // set the back end to the front end (Gap is bridged ! :)
+                            openAreaArr[0][0] = startEdge;
                         }
                         openAreaArr[openAreaRow][0] = startEdge;
                         openAreaArr[openAreaRow][1] = endEdge;
@@ -576,6 +578,10 @@ int main(int argc, const char* argv[]) {
                 }
             }
             */
+            /*if ((edgeArr[0][0] != edgeArr[edgeRow][0]) && (edgeArr[0][1] == edgeArr[edgeRow][1])) {
+                edgeArr[0][0] = edgeArr[edgeRow][0];
+                edgeArr[0][1] = edgeArr[edgeRow][1];
+            }*/
 
             for (int i = 0; i < edgeRow; i++) {
                 
@@ -588,7 +594,7 @@ int main(int argc, const char* argv[]) {
                 if ((tempGapWidth >= widthThreshold) & (tempGapDepth >= depthThreshold)) { // if is a valid gap
                     wayPoints[wpIndex] = ((edgeArr[i][0] + edgeArr[i][1]) / 2); // set one waypoint to the midpoint of a valid gap
                     wpIndex++;
-
+                     
                     printf("%f %f \n", thetaArr[edgeArr[i][0]], thetaArr[edgeArr[i][1]]);
 
                     //printf("Width: %f Depth: %f  ", tempGapWidth, tempGapDepth);
@@ -598,26 +604,33 @@ int main(int argc, const char* argv[]) {
 
             }
 
-
-            for (int i = 0; i < openAreaRow; i++) {
-                tempGapWidth = find_gap_width(distArr, thetaArr, openAreaArr[i][0], openAreaArr[i][1]); // asign temp var width
-                tempGapDepth = find_gap_depth(distArr, thetaArr, openAreaArr[i][0], openAreaArr[i][1], count); // asign temp var depth
-                //printf("width: %f \n", tempGapWidth);
-                if ((tempGapWidth >= 300) & (tempGapWidth <= 10000)) {
+            //printf("open arr row: %d \n", openAreaRow);
+            
+            if (openAreaRow == 1) {
+                printf("0 359 \n");
+            }
+            else {
+                for (int i = 0; i < openAreaRow; i++) {
+                    tempGapWidth = find_gap_width(distArr, thetaArr, openAreaArr[i][0], openAreaArr[i][1]); // asign temp var width
+                    tempGapDepth = find_gap_depth(distArr, thetaArr, openAreaArr[i][0], openAreaArr[i][1], count); // asign temp var depth
                     //printf("width: %f \n", tempGapWidth);
-                    printf("%f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
-                    wayPoints[wpIndex] = ((openAreaArr[i][0] + openAreaArr[i][1]) / 2);
-                    wpIndex++;
-                    //printf("WP Index: %d \n", wpIndex);
-                }
-                else {
-                    if (tempGapWidth >= widthThreshold) {
+                    if ((tempGapWidth >= 300) & (tempGapWidth <= 10000)) {
+                        //printf("width: %f \n", tempGapWidth);
                         printf("%f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
-                        wayPoints[wpIndex] = (count / 2);
+                        wayPoints[wpIndex] = ((openAreaArr[i][0] + openAreaArr[i][1]) / 2);
                         wpIndex++;
+                        //printf("WP Index: %d \n", wpIndex);
                     }
+                    else {
+                        if (tempGapWidth >= widthThreshold) {
+                            //printf("openarrow: %d \n", openAreaRow);
+                            printf("%f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
+                            wayPoints[wpIndex] = (count / 2);
+                            wpIndex++;
+                        }
+                    }
+
                 }
-                
             }
             //all waypoints written to wayPoints[index]
 
