@@ -95,6 +95,7 @@ void clean_avg_data(float dist[], float ang[], float qual[], int i) { // functio
     if (qual[i] == 0) { // check for the 0 quality points (reflective strips on doors, weird screens etc.
         for (int j = 0; j < 5; j++) { 
             if (qual[i + j] == 0) { //check for how many 0 qual points
+                //printf("zqcount: %d \n", zQualCount);
                 zQualCount++;
             }
         }
@@ -176,7 +177,7 @@ bool is_path(float dist[], float threshold, int i) { // determines if a point is
 }
 
 bool is_no_return(float dist[], float qual[], int i) {
-    if ((dist[i] == 0) & (qual[i] == 0)) {
+    if ((dist[i] == 0) /*& (qual[i] == 0)*/) {
         return true;
     }
     else {
@@ -432,16 +433,20 @@ int main(int argc, const char* argv[]) {
     drv->startScan(0, 1);
 
     
-
-
+    int all_clear_count = 0;
+    int num_runs = 5;
     // fetech result and print it out...
-    while (d < 5) {
+    while (d < num_runs) {
         rplidar_response_measurement_node_hq_t nodes[8192];
         size_t   count = _countof(nodes);
 
         op_result = drv->grabScanDataHq(nodes, count);
         
-        //if (IS_OK(op_result)) { // Check if reading is OK 
+        if (IS_OK(op_result)) {
+        }
+        else {
+            printf("Bad Health Code - Rerun...\n");
+        }// Check if reading is OK 
             drv->ascendScanData(nodes, count); // Iterate the driver
             for (int col = 0; col < sampleAvg; ++col) { // Run two for loops - Columns for each data point to be aggregated column-wise
                 for (int pos = 0; pos < (int)count; ++pos) { // Row-wise iteration to store the data for a single revolution 
@@ -505,7 +510,7 @@ int main(int argc, const char* argv[]) {
             //JULIA LOOK HERE: adjustable parameters for ya
             int widthThreshold = 500; // 500 as in 0.5m (~1.5ft)
             int depthThreshold = 500; // not as important. Can omit depth check for increased accuracy but slower performance 
-            int minObjDist = 200; // distance for detecting obstacles ('x' mm or less is an object to avoid, beyond 'x' we ignore)
+            int minObjDist = 2000; // distance for detecting obstacles ('x' mm or less is an object to avoid, beyond 'x' we ignore)
             
             //Begin pathfinding:
             for (int i = 0; i < int(count); i++) {
@@ -552,6 +557,9 @@ int main(int argc, const char* argv[]) {
                         if (endEdge >= count - 1) {
                             endEdge = tempEnd; // set the back end to the front end (Gap is bridged ! :)
                             openAreaArr[0][0] = startEdge;
+                            //openAreaArr[openAreaRow][0] = 0;
+                            //openAreaArr[openAreaRow][1] = 0;
+                            
                         }
                         openAreaArr[openAreaRow][0] = startEdge;
                         openAreaArr[openAreaRow][1] = endEdge;
@@ -607,7 +615,10 @@ int main(int argc, const char* argv[]) {
             //printf("open arr row: %d \n", openAreaRow);
             
             if (openAreaRow == 1) {
-                printf("0 359 \n");
+                all_clear_count++;
+                if (all_clear_count >= num_runs) {
+                    printf("0 359 \n");
+                }
             }
             else {
                 for (int i = 0; i < openAreaRow; i++) {
@@ -681,6 +692,7 @@ int main(int argc, const char* argv[]) {
         if (ctrl_c_pressed) {
             break;
         }
+        printf("d: %d \n", d);
         d++;
     } // end while(1)
     printf("Done with 'while' loop - code should cease running \n");
