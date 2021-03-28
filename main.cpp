@@ -434,7 +434,7 @@ int main(int argc, const char* argv[]) {
 
     
     int all_clear_count = 0;
-    int num_runs = 5;
+    int num_runs = 1;
     // fetech result and print it out...
     while (d < num_runs) {
         rplidar_response_measurement_node_hq_t nodes[8192];
@@ -482,11 +482,13 @@ int main(int argc, const char* argv[]) {
             for (int i = 0; i < count; i++) {
                 badScanData << thetaArr[i] << "," << distArr[i] << "," << std::endl;
             }
+            //
             for (int i = 0; i < int(count); i++) { // clean data
                 //printf("Point: %d TH: %f Dist: %f Q: %d \n", i, thetaArr[i], distArr[i], qualArr[i]);
                 clean_avg_data(distArr, thetaArr, qualArr, i);
                 //printf("Point: %d TH: %f Dist: %f Q: %d \n", i, thetaArr[i], distArr[i], qualArr[i]);
             }
+            //
             
             badScanData << "Theta, Dist(mm)(Unclean), \n";
             for (int i = 0; i < count; i++) {
@@ -510,7 +512,7 @@ int main(int argc, const char* argv[]) {
             //JULIA LOOK HERE: adjustable parameters for ya
             int widthThreshold = 500; // 500 as in 0.5m (~1.5ft)
             int depthThreshold = 500; // not as important. Can omit depth check for increased accuracy but slower performance 
-            int minObjDist = 2000; // distance for detecting obstacles ('x' mm or less is an object to avoid, beyond 'x' we ignore)
+            int minObjDist = 4000; // distance for detecting obstacles ('x' mm or less is an object to avoid, beyond 'x' we ignore)
             
             //Begin pathfinding:
             for (int i = 0; i < int(count); i++) {
@@ -625,7 +627,7 @@ int main(int argc, const char* argv[]) {
                     tempGapWidth = find_gap_width(distArr, thetaArr, openAreaArr[i][0], openAreaArr[i][1]); // asign temp var width
                     tempGapDepth = find_gap_depth(distArr, thetaArr, openAreaArr[i][0], openAreaArr[i][1], count); // asign temp var depth
                     //printf("width: %f \n", tempGapWidth);
-                    if ((tempGapWidth >= 300) & (tempGapWidth <= 10000)) {
+                    if (abs((thetaArr[openAreaArr[i][0]] - thetaArr[openAreaArr[i][1]])) >= 40) {
                         //printf("width: %f \n", tempGapWidth);
                         printf("%f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
                         wayPoints[wpIndex] = ((openAreaArr[i][0] + openAreaArr[i][1]) / 2);
@@ -633,12 +635,13 @@ int main(int argc, const char* argv[]) {
                         //printf("WP Index: %d \n", wpIndex);
                     }
                     else {
-                        if (tempGapWidth >= widthThreshold) {
+                        printf("gap too small: %f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
+                        /*if (tempGapWidth >= widthThreshold) {
                             //printf("openarrow: %d \n", openAreaRow);
-                            printf("%f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
+                            printf("%f %f %f %f \n", thetaArr[openAreaArr[i][0]], distArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]], distArr[openAreaArr[i][1]]);
                             wayPoints[wpIndex] = (count / 2);
                             wpIndex++;
-                        }
+                        }*/
                     }
 
                 }
