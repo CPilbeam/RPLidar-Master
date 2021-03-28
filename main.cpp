@@ -92,14 +92,16 @@ void ctrlc(int)
 void clean_avg_data(float dist[], float ang[], float qual[], int i) { // function to make data clean :)
     int zDistCount = 0;
     int zQualCount = 0;
+    int zero_parameter = 5;
+    float set_dist_to = 0;
     if (qual[i] == 0) { // check for the 0 quality points (reflective strips on doors, weird screens etc.
-        for (int j = 0; j < 5; j++) { 
+        for (int j = 0; j < zero_parameter + 1; j++) { 
             if (qual[i + j] == 0) { //check for how many 0 qual points
                 //printf("zqcount: %d \n", zQualCount);
                 zQualCount++;
             }
         }
-        if (zQualCount <= 4) { // if there are 4 or less consecutive 0 quality points we want to cleanem up. 
+        if (zQualCount <= zero_parameter) { // if there are 4 or less consecutive 0 quality points we want to cleanem up. 
             for (int n = 0; n < zQualCount; n++) {
                 if (i != 0) {
                     dist[i + n] = dist[i - 1];
@@ -116,21 +118,25 @@ void clean_avg_data(float dist[], float ang[], float qual[], int i) { // functio
     // If good quality but bad distance (anomaly points - unsure why they exist)
     if (dist[i] == 0) {
         //printf("Dist at %f = 0 ", ang[i]);
-        for (int j = 0; j < 4; j++) {
+        for (int j = 0; j < 6; j++) {
             if (dist[i + j] == 0) {
                 zDistCount++;
             }
+            else {
+                set_dist_to = dist[i + j];
+            }
         }
         //printf("zDistCount: %d \n", zDistCount);
-        if (zDistCount <= 3) {
+        if (zDistCount < 5) {
             //printf("Bad dist %f | Distance to be set to = %f \n", ang[i], dist[i-1]);
             for (int n = 0; n < zDistCount; n++) {
-                if (i != 0) { // branch to ensure we are not operating on the first index of the array
+                dist[i + n] = set_dist_to;
+                /*if (i != 0) { // branch to ensure we are not operating on the first index of the array
                     dist[i + n] = dist[i - 1]; // set a bad point equal to our last good point
                 }
                 if (i == 0) { // branch for if the first element of our data array is bad 
                     dist[i + n] = dist[i + zDistCount]; // set it to the first known good point (avoids indexing array[-1] causing the planet to explode)
-                }
+                }*/
             }
         }
     }
@@ -295,6 +301,9 @@ int main(int argc, const char* argv[]) {
     int b = 0;
     int c = 0;
     int d = 0;
+
+    int all_clear_count = 0;
+    int num_runs = 3;
     
     const char* opt_com_path = NULL;
     _u32         baudrateArray[2] = { 115200, 256000 };
@@ -433,8 +442,7 @@ int main(int argc, const char* argv[]) {
     drv->startScan(0, 1);
 
     
-    int all_clear_count = 0;
-    int num_runs = 1;
+    
     // fetech result and print it out...
     while (d < num_runs) {
         rplidar_response_measurement_node_hq_t nodes[8192];
@@ -508,6 +516,7 @@ int main(int argc, const char* argv[]) {
             int tempEnd = 0;
             int wayPoints[1000] = {};
             int wpIndex = 0;
+            float delta_theta = 0.0;
 
             //JULIA LOOK HERE: adjustable parameters for ya
             int widthThreshold = 500; // 500 as in 0.5m (~1.5ft)
@@ -627,7 +636,11 @@ int main(int argc, const char* argv[]) {
                     tempGapWidth = find_gap_width(distArr, thetaArr, openAreaArr[i][0], openAreaArr[i][1]); // asign temp var width
                     tempGapDepth = find_gap_depth(distArr, thetaArr, openAreaArr[i][0], openAreaArr[i][1], count); // asign temp var depth
                     //printf("width: %f \n", tempGapWidth);
-                    if (abs((thetaArr[openAreaArr[i][0]] - thetaArr[openAreaArr[i][1]])) >= 40) {
+                    delta_theta = abs(thetaArr[openAreaArr[i][0]] - thetaArr[openAreaArr[i][1]]);
+                    if (thetaArr[openAreaArr[i][0]] > thetaArr[openAreaArr[i][1]]) {
+                        delta_theta = 360 - delta_theta;
+                    }
+                    if (delta_theta >= 40) {
                         //printf("width: %f \n", tempGapWidth);
                         printf("%f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
                         wayPoints[wpIndex] = ((openAreaArr[i][0] + openAreaArr[i][1]) / 2);
@@ -635,7 +648,7 @@ int main(int argc, const char* argv[]) {
                         //printf("WP Index: %d \n", wpIndex);
                     }
                     else {
-                        printf("gap too small: %f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
+                        //printf("gap too small: %f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
                         /*if (tempGapWidth >= widthThreshold) {
                             //printf("openarrow: %d \n", openAreaRow);
                             printf("%f %f %f %f \n", thetaArr[openAreaArr[i][0]], distArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]], distArr[openAreaArr[i][1]]);
