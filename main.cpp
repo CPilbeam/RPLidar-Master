@@ -174,7 +174,7 @@ void clean_raw_data(float dist[][20], float qual[][20], int row) { // function t
 }
 
 bool is_path(float dist[], float threshold, int i) { // determines if a point is along a good path or not. 
-    if ((dist[i] < threshold)) { //currently set to 3.5m threshold - to be changed later
+    if ((dist[i] < threshold) && (dist[i] != 0)) { //currently set to 3.5m threshold - to be changed later
         return false;
     }
     else {
@@ -183,6 +183,8 @@ bool is_path(float dist[], float threshold, int i) { // determines if a point is
 }
 
 bool is_no_return(float dist[], float qual[], int i) {
+
+    // shouldnt be needed anymore
     if ((dist[i] == 0) /*& (qual[i] == 0)*/) {
         return true;
     }
@@ -541,7 +543,7 @@ int main(int argc, const char* argv[]) {
                     startEdge = i;
                     //printf("startEdge: %f \n", thetaArr[i]);
                     while (is_path(distArr, minObjDist, i)) {
-                       // printf("is path at theta: %f \n", thetaArr[i]);
+                        // printf("is path at theta: %f \n", thetaArr[i]);
                         i++;
                     }
                     endEdge = i;
@@ -554,7 +556,7 @@ int main(int argc, const char* argv[]) {
                         edgeArr[0][0] = startEdge;
                     }
 
-                   
+
                     edgeArr[edgeRow][0] = startEdge;
                     edgeArr[edgeRow][1] = endEdge;
                     //printf("Endedge %f \n", thetaArr[endEdge]);
@@ -562,7 +564,7 @@ int main(int argc, const char* argv[]) {
                     edgeRow++;
 
                 } // if point detected is not a valid path - do next
-
+                /*
                 else { //branch for identifing a gap with no return readings
                     if (is_no_return(distArr, qualArr, i)) {
                         startEdge = i;
@@ -581,18 +583,18 @@ int main(int argc, const char* argv[]) {
                             openAreaArr[0][0] = startEdge;
                             //openAreaArr[openAreaRow][0] = 0;
                             //openAreaArr[openAreaRow][1] = 0;
-                            
+
                         }
                         openAreaArr[openAreaRow][0] = startEdge;
                         openAreaArr[openAreaRow][1] = endEdge;
                         //printf("%d %f %d %f \n", startEdge, thetaArr[startEdge], endEdge, thetaArr[endEdge]);
                         openAreaRow++;
                     }
-                    
+
                     // By this point all open area gaps should be found and edges stored in the open area array
                 }
+                */
 
-                
             } // end for each point in count nodes
             
             /*
@@ -614,7 +616,7 @@ int main(int argc, const char* argv[]) {
             }*/
 
             for (int i = 0; i < edgeRow; i++) {
-                
+
                 tempGapWidth = find_gap_width(distArr, thetaArr, edgeArr[i][0], edgeArr[i][1]); // asign temp var width
                 tempGapDepth = find_gap_depth(distArr, thetaArr, edgeArr[i][0], edgeArr[i][1], count); // asign temp var depth 
                 if (c < edgeRow) {
@@ -622,7 +624,7 @@ int main(int argc, const char* argv[]) {
                     c++;
                 }
                 delta_theta = abs(thetaArr[edgeArr[i][0]] - thetaArr[edgeArr[i][1]]);
-                if (thetaArr[edgeArr[i][0]] > thetaArr[edgeArr[i][1]]) { // if is a valid gap
+                if (thetaArr[edgeArr[i][0]] > thetaArr[edgeArr[i][1]]) { 
                     delta_theta = 360 - delta_theta;
                 }
                 if (delta_theta > 40) {
@@ -636,7 +638,7 @@ int main(int argc, const char* argv[]) {
             
             if (openAreaRow == 1) {
                 all_clear_count++;
-                if (all_clear_count > num_runs) {
+                if (all_clear_count >= num_runs) {
                     printf("0 359 \n");
                 }
             }
@@ -651,13 +653,13 @@ int main(int argc, const char* argv[]) {
                     }
                     if (delta_theta >= 40) {
                         //printf("width: %f \n", tempGapWidth);
-                        printf("%f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
+                        //printf("%f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
                         wayPoints[wpIndex] = ((openAreaArr[i][0] + openAreaArr[i][1]) / 2);
                         wpIndex++;
                         //printf("WP Index: %d \n", wpIndex);
                     }
                     else {
-                        printf("gap too small: %f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
+                        //printf("gap too small: %f %f \n", thetaArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]]);
                         /*if (tempGapWidth >= widthThreshold) {
                             //printf("openarrow: %d \n", openAreaRow);
                             printf("%f %f %f %f \n", thetaArr[openAreaArr[i][0]], distArr[openAreaArr[i][0]], thetaArr[openAreaArr[i][1]], distArr[openAreaArr[i][1]]);
