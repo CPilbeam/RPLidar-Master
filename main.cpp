@@ -564,36 +564,37 @@ int main(int argc, const char* argv[]) {
                     edgeRow++;
 
                 } // if point detected is not a valid path - do next
-                /*
-                else { //branch for identifing a gap with no return readings
-                    if (is_no_return(distArr, qualArr, i)) {
-                        startEdge = i;
-                        //printf("startEdge %f ", thetaArr[i]);
-                        while (is_no_return(distArr, qualArr, i)) {
-                            i++;
-                        }
-                        endEdge = i;
-                        //printf("endEdge %f \n", thetaArr[i]);
+            }
 
-                        if (startEdge <= 1) { // account for bridge across 360-0 mark
-                            tempEnd = endEdge; // set a temporary variable to the front end
-                        }
-                        if (endEdge >= count - 1) {
-                            endEdge = tempEnd; // set the back end to the front end (Gap is bridged ! :)
-                            openAreaArr[0][0] = startEdge;
-                            //openAreaArr[openAreaRow][0] = 0;
-                            //openAreaArr[openAreaRow][1] = 0;
-
-                        }
-                        openAreaArr[openAreaRow][0] = startEdge;
-                        openAreaArr[openAreaRow][1] = endEdge;
-                        //printf("%d %f %d %f \n", startEdge, thetaArr[startEdge], endEdge, thetaArr[endEdge]);
-                        openAreaRow++;
+            for (int i = 0; i < int(count); i++) {
+                
+                 //branch for identifing a gap with no return readings
+                if (is_no_return(distArr, qualArr, i)) {
+                    startEdge = i;
+                    //printf("startEdge %f ", thetaArr[i]);
+                    while (is_no_return(distArr, qualArr, i)) {
+                        i++;
                     }
+                    endEdge = i;
+                    //printf("endEdge %f \n", thetaArr[i]);
 
-                    // By this point all open area gaps should be found and edges stored in the open area array
+                    if (startEdge <= 1) { // account for bridge across 360-0 mark
+                        tempEnd = endEdge; // set a temporary variable to the front end
+                    }
+                    if (endEdge >= count - 1) {
+                        endEdge = tempEnd; // set the back end to the front end (Gap is bridged ! :)
+                        openAreaArr[0][0] = startEdge;
+                        //openAreaArr[openAreaRow][0] = 0;
+                        //openAreaArr[openAreaRow][1] = 0;
+
+                    }
+                    openAreaArr[openAreaRow][0] = startEdge;
+                    openAreaArr[openAreaRow][1] = endEdge;
+                    //printf("%d %f %d %f \n", startEdge, thetaArr[startEdge], endEdge, thetaArr[endEdge]);
+                    openAreaRow++;
                 }
-                */
+
+                    // By this point all open area gaps should be found and edges stored in the open area array                
 
             } // end for each point in count nodes
             
